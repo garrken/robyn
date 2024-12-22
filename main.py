@@ -1,6 +1,7 @@
 import os
 import subprocess
 import streamlit as st
+import pandas as pd
 
 # Funktion för att klona och installera Robyn
 def install_robyn():
@@ -17,22 +18,26 @@ def install_robyn():
         )
         if result.returncode != 0:
             st.error(f"Failed to clone Robyn repository: {result.stderr.decode()}")
-            return
+            return False
 
-    st.info("Installing Robyn as a Python module...")
+    st.info("Installing dependencies (including PyQt5)...")
+    # Installera PyQt5 och Robyn
     result = subprocess.run(
-        ["pip", "install", "-e", os.path.join(target_dir, "python")],
+        ["pip", "install", "pyqt5", "-e", os.path.join(target_dir, "python")],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     if result.returncode != 0:
         st.error(f"Failed to install Robyn: {result.stderr.decode()}")
-    else:
-        st.success("Robyn installed successfully!")
+        return False
+
+    st.success("Robyn installed successfully!")
+    return True
 
 # Kör installation av Robyn
 with st.spinner("Setting up Robyn, please wait..."):
-    install_robyn()
+    if not install_robyn():
+        st.stop()
 
 # Importera Robyn efter installation
 try:
@@ -40,6 +45,7 @@ try:
     st.success("Robyn imported successfully!")
 except ImportError as e:
     st.error(f"Failed to import Robyn: {str(e)}")
+    st.stop()
 
 # Initiera applikationens huvudgränssnitt
 st.title("Robyn SaaS - Marketing Mix Modeling")
@@ -54,19 +60,20 @@ try:
     st.success("Robyn initialized successfully!")
 except Exception as e:
     st.error(f"Failed to initialize Robyn: {str(e)}")
+    st.stop()
 
 # Användargränssnitt för att köra Robyn-modellen
 uploaded_file = st.file_uploader("Upload your MMM data CSV file", type=["csv"])
 
 if uploaded_file:
     st.subheader("Uploaded File")
-    st.dataframe(pd.read_csv(uploaded_file).head())
+    df = pd.read_csv(uploaded_file)
+    st.dataframe(df.head())
 
     if st.button("Run Robyn Model"):
-        # Exempel: använd Robyn-instansen
         try:
-            st.info("Running Robyn...")
-            # Lägg till körlogik här baserat på Robyn-instansen
+            st.info("Running Robyn model...")
+            # Lägg till din Robyn-körlogik här
             st.success("Robyn model run completed!")
         except Exception as e:
             st.error(f"Failed to run Robyn model: {str(e)}")
