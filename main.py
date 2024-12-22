@@ -4,13 +4,13 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Function to download and extract only the Python part of Robyn with progress bar
+# Function to download and extract only the Python part of Robyn
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
         st.info("Downloading Robyn Python code...")
         url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
 
-        # Streamlit progress bar
+        # Streamlit progress bar for visual feedback
         progress_bar = st.progress(0)
         status_text = st.empty()
 
@@ -35,12 +35,15 @@ def download_and_prepare_robyn():
                 if file.startswith("Robyn-main/python/"):
                     zip_ref.extract(file, ".")
         
-        # Rename the extracted folder for simplicity
-        os.rename("Robyn-main/python", "robyn_code")
-
-        # Cleanup
+        # Ensure the extracted files are correctly placed in robyn_code
+        if os.path.exists("Robyn-main/python"):
+            os.rename("Robyn-main/python", "robyn_code")
+        
+        # Cleanup unnecessary files
         os.remove(zip_path)
-        os.rmdir("Robyn-main")
+        if os.path.exists("Robyn-main"):
+            import shutil
+            shutil.rmtree("Robyn-main")
 
         # Update status
         status_text.text("Download complete!")
@@ -51,7 +54,11 @@ with st.spinner("Setting up Robyn, please wait..."):
     download_and_prepare_robyn()
 
 # Import Robyn dynamically after ensuring it's downloaded
-from robyn_code.robyn import Robyn
+try:
+    from robyn_code.robyn import Robyn
+except ModuleNotFoundError:
+    st.error("Robyn code was not found. Ensure download_and_prepare_robyn is working correctly.")
+    raise
 
 # Streamlit app starts here
 st.title("Robyn SaaS - Marketing Mix Modeling")
