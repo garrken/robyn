@@ -4,6 +4,9 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
+# Lösning för Streamlit Cloud: Inaktivera övervakning av filer för att undvika inotify-limit
+os.environ["WATCHDOG_ENABLE"] = "false"
+
 # Function to download and extract only the Python part of Robyn
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
