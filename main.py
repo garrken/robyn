@@ -4,33 +4,40 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Function to download and extract Robyn Python code
+# Function to download and extract only the Python part of Robyn
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
-        st.info("Downloading Robyn...")
+        st.info("Downloading Robyn Python code...")
         url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
         
         # Download the repository as a zip file
-        response = requests.get(url)
+        response = requests.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
         zip_path = "robyn.zip"
+        
+        # Save the downloaded content
         with open(zip_path, "wb") as f:
-            f.write(response.content)
+            for chunk in response.iter_content(1024):
+                f.write(chunk)
         
-        # Extract the Python part of the repository
+        # Extract only the Python part of the repository
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(".")
+            for file in zip_ref.namelist():
+                if file.startswith("Robyn-main/python/"):
+                    zip_ref.extract(file, ".")
         
-        # Move the Python code to `robyn_code`
+        # Rename the extracted folder for simplicity
         os.rename("Robyn-main/python", "robyn_code")
         
-        # Cleanup unnecessary files
+        # Cleanup
         os.remove(zip_path)
         os.rmdir("Robyn-main")
 
-# Ensure Robyn code is available
-download_and_prepare_robyn()
+# Download Robyn Python code if not already available
+with st.spinner("Setting up Robyn, please wait..."):
+    download_and_prepare_robyn()
 
-# Import Robyn dynamically
+# Import Robyn dynamically after ensuring it's downloaded
 from robyn_code.robyn import Robyn
 
 # Streamlit app starts here
@@ -39,16 +46,16 @@ st.title("Robyn SaaS - Marketing Mix Modeling")
 # Sidebar for settings
 st.sidebar.header("Settings")
 
-# File uploader
+# File uploader for data
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file:
-    # Step 1: Load and display raw data
+    # Load and display raw data
     raw_data = pd.read_csv(uploaded_file)
     st.subheader("Raw Data")
     st.dataframe(raw_data.head())
 
-    # Step 2: Prepare data
+    # Prepare the data
     def prepare_data(data):
         """Prepare data for Robyn modeling."""
         data.fillna(0, inplace=True)
@@ -60,7 +67,7 @@ if uploaded_file:
     st.subheader("Prepared Data")
     st.dataframe(prepared_data.head())
 
-    # Step 3: Run Robyn model
+    # Run Robyn Model
     if st.button("Run Robyn Model"):
         temp_csv_path = "temp_data.csv"
         prepared_data.to_csv(temp_csv_path, index=False)
@@ -72,7 +79,7 @@ if uploaded_file:
         st.image(robyn_instance.get_plot_data(), caption="ROAS Plot")
         st.image(robyn_instance.get_media_mix_plot(), caption="Media Mix")
 
-    # Step 4: Optimization settings
+    # Sidebar optimization settings
     st.sidebar.subheader("Optimization Settings")
     goal = st.sidebar.radio("Optimization Goal", ["Maximize ROAS", "Maximize Conversions"])
     budget = st.sidebar.slider("Total Budget (SEK)", 10000, 100000, 50000)
