@@ -1,7 +1,7 @@
-streamlit
-pandas
+git+https://github.com/facebookexperimental/Robyn.git@main#egg=robyn
 numpy
-scikit-learn
-xlsxwriter
-plotly
-requests
+pandas
+scipy
+pyarrow
+matplotlib
+pyqt5
