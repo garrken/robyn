@@ -1,7 +1,7 @@
 import os
-import streamlit as st
 import sys
 import subprocess
+import streamlit as st
 
 # Klona Robyn-repositoryt om det inte redan finns
 robyn_code_path = os.path.join(os.getcwd(), "robyn_code")
@@ -21,6 +21,15 @@ if not os.path.exists(robyn_code_path):
 # Lägg till robyn_code/python till sys.path
 python_path = os.path.join(robyn_code_path, "python")
 sys.path.append(python_path)
+
+# Installera PyQt5 som fallback om PyQt6 misslyckas
+try:
+    st.info("Installing dependencies...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    st.success("Dependencies installed successfully.")
+except subprocess.CalledProcessError as e:
+    st.error(f"Dependency installation failed: {e}")
+    st.stop()
 
 # Importera Robyn
 try:
@@ -44,5 +53,4 @@ if 'robyn_instance' not in st.session_state:
 else:
     st.info("Robyn instance is already created.")
 
-# Placeholder för framtida interaktioner
 st.write("Använd Robyn för att utföra Marketing Mix Modeling.")
