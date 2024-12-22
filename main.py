@@ -4,7 +4,7 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Function to download and prepare Robyn code
+# Function to download and extract Robyn Python code
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
         st.info("Downloading Robyn...")
@@ -16,24 +16,24 @@ def download_and_prepare_robyn():
         with open(zip_path, "wb") as f:
             f.write(response.content)
         
-        # Extract the necessary part of the repository
+        # Extract the Python part of the repository
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(".")
         
-        # Move the Python part to robyn_code
+        # Move the Python code to `robyn_code`
         os.rename("Robyn-main/python", "robyn_code")
         
-        # Cleanup
+        # Cleanup unnecessary files
         os.remove(zip_path)
         os.rmdir("Robyn-main")
 
-# Download Robyn at app start
+# Ensure Robyn code is available
 download_and_prepare_robyn()
 
-# Dynamically import Robyn after downloading
+# Import Robyn dynamically
 from robyn_code.robyn import Robyn
 
-# App starts here
+# Streamlit app starts here
 st.title("Robyn SaaS - Marketing Mix Modeling")
 
 # Sidebar for settings
@@ -51,9 +51,9 @@ if uploaded_file:
     # Step 2: Prepare data
     def prepare_data(data):
         """Prepare data for Robyn modeling."""
-        data.fillna(0, inplace=True)  # Handle missing values
+        data.fillna(0, inplace=True)
         for col in data.select_dtypes(include=["float", "int"]).columns:
-            data[col] = data[col].clip(lower=0)  # Clip negative values
+            data[col] = data[col].clip(lower=0)
         return data
 
     prepared_data = prepare_data(raw_data)
