@@ -3,7 +3,7 @@ import subprocess
 import streamlit as st
 import pandas as pd
 
-# Funktion för att klona och installera Robyn
+
 def install_robyn():
     """Klonar och installerar Robyn från GitHub."""
     repo_url = "https://github.com/facebookexperimental/Robyn.git"
@@ -20,19 +20,18 @@ def install_robyn():
             st.error(f"Failed to clone Robyn repository: {result.stderr.decode()}")
             return False
 
-    st.info("Installing dependencies (including PyQt5)...")
-    # Installera PyQt5 och Robyn
-    result = subprocess.run(
-        ["pip", "install", "pyqt5", "-e", os.path.join(target_dir, "python")],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if result.returncode != 0:
-        st.error(f"Failed to install Robyn: {result.stderr.decode()}")
+    st.info("Installing dependencies (PyQt5 instead of PyQt6)...")
+    try:
+        # Installera PyQt5 och andra beroenden separat
+        subprocess.check_call(["pip", "install", "pyqt5"])
+        subprocess.check_call(["pip", "install", "-e", os.path.join(target_dir, "python")])
+    except subprocess.CalledProcessError as e:
+        st.error(f"Failed to install Robyn dependencies: {e}")
         return False
 
     st.success("Robyn installed successfully!")
     return True
+
 
 # Kör installation av Robyn
 with st.spinner("Setting up Robyn, please wait..."):
