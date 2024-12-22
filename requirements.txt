@@ -4,4 +4,3 @@ numpy
 scikit-learn
 xlsxwriter
 plotly
-git+https://github.com/facebookexperimental/Robyn.git
