@@ -1,53 +1,62 @@
-import streamlit as st
 import os
 import subprocess
-from pathlib import Path
+import streamlit as st
 
-# Function to check and install dependencies
-def install_dependencies():
-    """Install required dependencies for Robyn."""
-    try:
-        requirements_path = Path("robyn_code/requirements.txt")
-        if requirements_path.exists():
-            subprocess.check_call([
-                "pip", "install", "-r", str(requirements_path)
-            ])
-        else:
-            st.error("requirements.txt not found in robyn_code folder.")
-    except Exception as e:
-        st.error(f"Failed to install dependencies: {e}")
+# Funktion för att klona Robyn-repot och förbereda koden
+def setup_robyn_code():
+    repo_url = "https://github.com/facebookexperimental/Robyn.git"
+    robyn_code_path = os.path.join(os.getcwd(), "robyn_code")
+    python_path = os.path.join(robyn_code_path, "python")
 
-# Function to dynamically import Robyn
-def import_robyn():
-    """Import Robyn module dynamically."""
-    try:
-        from robyn_code.robyn import Robyn
-        st.success("Successfully imported Robyn!")
-        return Robyn
-    except ModuleNotFoundError as e:
-        st.error(f"Failed to import Robyn: {e}")
-        return None
-
-# Streamlit app starts here
-st.title("Robyn SaaS - Marketing Mix Modeling")
-
-# Install dependencies
-st.write("Installing dependencies...")
-install_dependencies()
-
-# Check if robyn_code folder exists
-robyn_code_path = Path("robyn_code")
-if robyn_code_path.exists():
-    st.write("robyn_code directory found.")
-    Robyn = import_robyn()
-
-    if Robyn:
-        # Initialize Robyn
+    # Kontrollera om robyn_code redan finns
+    if not os.path.exists(robyn_code_path):
+        st.write("Cloning Robyn repository...")
         try:
-            working_dir = "./robyn_outputs"
-            robyn_instance = Robyn(working_dir)
-            st.success("Robyn instance created successfully!")
-        except Exception as e:
-            st.error(f"Failed to initialize Robyn: {e}")
+            subprocess.check_call(["git", "clone", repo_url, "robyn_code"])
+        except subprocess.CalledProcessError as e:
+            st.error(f"Failed to clone repository: {e}")
+            return False
+
+    # Kontrollera om python-mappen finns i robyn_code
+    if not os.path.exists(python_path):
+        st.error(f"'python' directory not found in {robyn_code_path}. Please check the repository structure.")
+        return False
+
+    st.write("Robyn repository cloned successfully.")
+    return True
+
+# Funktion för att installera beroenden
+def install_dependencies():
+    requirements_path = os.path.join(os.getcwd(), "robyn_code", "python", "requirements.txt")
+
+    if not os.path.exists(requirements_path):
+        st.error("requirements.txt not found in robyn_code/python.")
+        return False
+
+    st.write("Installing dependencies...")
+    try:
+        subprocess.check_call(["pip", "install", "-r", requirements_path])
+        st.write("Dependencies installed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        st.error(f"Failed to install dependencies: {e}")
+        return False
+
+# Hämta och konfigurera Robyn
+if setup_robyn_code() and install_dependencies():
+    try:
+        # Importera Robyn från den klonade koden
+        from robyn.robyn import Robyn
+        st.write("Successfully imported Robyn.")
+        st.title("Robyn SaaS - Marketing Mix Modeling")
+
+        # Exempel på Robyn-användning
+        working_dir = "./robyn_working_dir"
+        os.makedirs(working_dir, exist_ok=True)
+        robyn_instance = Robyn(working_dir=working_dir)
+        st.write("Robyn instance created successfully.")
+
+    except ImportError as e:
+        st.error(f"Failed to import Robyn: {e}")
 else:
-    st.error("robyn_code directory does not exist. Please ensure the directory is present.")
+    st.stop()
