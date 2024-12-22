@@ -4,7 +4,7 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Disable file watching to avoid inotify limit issues
+# Fullständig inaktivering av filövervakning
 os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
 
 def download_and_prepare_robyn():
@@ -31,48 +31,40 @@ def download_and_prepare_robyn():
 
         os.remove(zip_path)
 
-# Download Robyn Python code if not already available
+# Ladda ner Robyns Python-kod om den inte redan finns
 with st.spinner("Setting up Robyn, please wait..."):
     download_and_prepare_robyn()
 
-# Debug: Inspect contents of robyn.py
-if os.path.exists("robyn_code/robyn.py"):
-    st.write("Contents of robyn.py:")
-    with open("robyn_code/robyn.py", "r") as file:
-        st.code(file.read())
-else:
-    st.error("robyn.py is missing in robyn_code!")
-
-# Attempt to dynamically import Robyn
+# Försök importera klassen Robyn dynamiskt
 try:
-    from robyn_code.robyn import robyn as Robyn  # Adjust import if class name is different
+    from robyn_code.robyn import robyn as Robyn
     st.write("Successfully imported 'robyn' as 'Robyn'.")
 except ImportError as e:
     try:
-        from robyn_code.robyn import Robyn  # Attempt with original class name
+        from robyn_code.robyn import Robyn
         st.write("Successfully imported 'Robyn'.")
     except ImportError:
         st.error(f"Failed to import 'Robyn': {str(e)}")
         st.stop()
 
-# Streamlit app starts here
+# Streamlit-applikationen börjar här
 st.title("Robyn SaaS - Marketing Mix Modeling")
 
-# Sidebar for settings
+# Sidebar för inställningar
 st.sidebar.header("Settings")
 
-# File uploader for data
+# File uploader för data
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file:
-    # Load and display raw data
+    # Läs och visa rådata
     raw_data = pd.read_csv(uploaded_file)
     st.subheader("Raw Data")
     st.dataframe(raw_data.head())
 
-    # Prepare the data
+    # Förbered data
     def prepare_data(data):
-        """Prepare data for Robyn modeling."""
+        """Förbered data för Robyn-modellering."""
         data.fillna(0, inplace=True)
         for col in data.select_dtypes(include=["float", "int"]).columns:
             data[col] = data[col].clip(lower=0)
@@ -82,7 +74,7 @@ if uploaded_file:
     st.subheader("Prepared Data")
     st.dataframe(prepared_data.head())
 
-    # Run Robyn Model
+    # Kör Robyn-modellen
     if st.button("Run Robyn Model"):
         temp_csv_path = "temp_data.csv"
         prepared_data.to_csv(temp_csv_path, index=False)
@@ -92,13 +84,13 @@ if uploaded_file:
 
         st.success("Robyn Model executed successfully!")
 
-    # Sidebar optimization settings
+    # Optimeringsinställningar
     st.sidebar.subheader("Optimization Settings")
     goal = st.sidebar.radio("Optimization Goal", ["Maximize ROAS", "Maximize Conversions"])
     budget = st.sidebar.slider("Total Budget (SEK)", 10000, 100000, 50000)
 
     if st.sidebar.button("Optimize Media Mix"):
-        # Example optimization logic
+        # Exempel på optimeringslogik
         optimized_mix = {
             "Facebook": budget * 0.4,
             "Google Ads": budget * 0.3,
