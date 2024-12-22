@@ -3,50 +3,52 @@ import requests
 import zipfile
 import streamlit as st
 import pandas as pd
-from robyn_code.robyn import Robyn  # Dynamisk import efter nedladdning
 
-# Function to download and extract Robyn code
-def download_robyn_code():
+# Function to download and prepare Robyn code
+def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
-        st.info("Downloading Robyn code...")
+        st.info("Downloading Robyn...")
         url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
         
-        # Download the zip file
+        # Download the repository as a zip file
         response = requests.get(url)
         zip_path = "robyn.zip"
         with open(zip_path, "wb") as f:
             f.write(response.content)
         
-        # Extract the zip file
+        # Extract the necessary part of the repository
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(".")
         
-        # Move the necessary files to a folder called `robyn_code`
+        # Move the Python part to robyn_code
         os.rename("Robyn-main/python", "robyn_code")
         
-        # Clean up unnecessary files
+        # Cleanup
         os.remove(zip_path)
         os.rmdir("Robyn-main")
 
 # Download Robyn at app start
-download_robyn_code()
+download_and_prepare_robyn()
 
-# App title
+# Dynamically import Robyn after downloading
+from robyn_code.robyn import Robyn
+
+# App starts here
 st.title("Robyn SaaS - Marketing Mix Modeling")
 
-# Sidebar settings
+# Sidebar for settings
 st.sidebar.header("Settings")
 
-# File uploader for data
+# File uploader
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file:
-    # Step 1: Load the uploaded file
+    # Step 1: Load and display raw data
     raw_data = pd.read_csv(uploaded_file)
     st.subheader("Raw Data")
     st.dataframe(raw_data.head())
 
-    # Step 2: Prepare data (this part assumes a preparation function exists)
+    # Step 2: Prepare data
     def prepare_data(data):
         """Prepare data for Robyn modeling."""
         data.fillna(0, inplace=True)  # Handle missing values
@@ -85,4 +87,3 @@ if uploaded_file:
         }
         st.subheader("Optimized Media Mix")
         st.json(optimized_mix)
-
