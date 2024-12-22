@@ -18,11 +18,24 @@ if not os.path.exists(robyn_code_path):
         st.error(f"Failed to clone Robyn repository: {e}")
         st.stop()
 
-# Kontrollera om requirements.txt finns
+# Kontrollera om requirements.txt finns, annars ladda ner det
 requirements_file = os.path.join(robyn_code_path, "python", "requirements.txt")
 if not os.path.exists(requirements_file):
-    st.error("requirements.txt not found in robyn_code/python folder.")
-    st.stop()
+    st.info("Downloading requirements.txt...")
+    try:
+        subprocess.run(
+            [
+                "curl",
+                "-o",
+                requirements_file,
+                "https://raw.githubusercontent.com/facebookexperimental/Robyn/main/python/requirements.txt",
+            ],
+            check=True,
+        )
+        st.success("requirements.txt downloaded successfully.")
+    except subprocess.CalledProcessError as e:
+        st.error(f"Failed to download requirements.txt: {e}")
+        st.stop()
 
 # Lägg till robyn_code/python till sys.path
 python_path = os.path.join(robyn_code_path, "python")
