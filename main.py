@@ -4,79 +4,56 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Lösning för Streamlit Cloud: Inaktivera övervakning av filer för att undvika inotify-limit
-os.environ["WATCHDOG_ENABLE"] = "false"
+# Disable file watching to avoid inotify limit issues
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
 
-# Function to download and extract only the Python part of Robyn
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
         st.info("Downloading Robyn Python code...")
         url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
 
-        # Streamlit progress bar for feedback
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        # Download the repository as a zip file
         response = requests.get(url, stream=True)
-        total_size = int(response.headers.get('content-length', 0))
         zip_path = "robyn.zip"
-        downloaded_size = 0
 
-        # Save the downloaded content in chunks
         with open(zip_path, "wb") as f:
             for chunk in response.iter_content(1024):
-                if chunk:
-                    f.write(chunk)
-                    downloaded_size += len(chunk)
-                    progress_bar.progress(min(downloaded_size / total_size, 1.0))
-                    status_text.text(f"Downloaded {downloaded_size} of {total_size} bytes...")
+                f.write(chunk)
 
-        # Extract only the relevant part of the repository
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            for file in zip_ref.namelist():
-                if file.startswith("Robyn-main/python/src/robyn/"):
-                    zip_ref.extract(file, ".")
+            zip_ref.extractall(".")
         
-        # Move extracted files to robyn_code for simplicity
         if os.path.exists("Robyn-main/python/src/robyn"):
             os.rename("Robyn-main/python/src/robyn", "robyn_code")
+            st.write("robyn_code contents:")
+            st.write(os.listdir("robyn_code"))
+        else:
+            st.error("Failed to extract robyn_code correctly!")
 
-        # Create __init__.py if missing
-        init_file = os.path.join("robyn_code", "__init__.py")
-        if not os.path.exists(init_file):
-            with open(init_file, "w") as f:
-                pass
-
-        # Cleanup unnecessary files
         os.remove(zip_path)
-        if os.path.exists("Robyn-main"):
-            import shutil
-            shutil.rmtree("Robyn-main")
-
-        # Update status
-        status_text.text("Download complete!")
-        progress_bar.empty()
 
 # Download Robyn Python code if not already available
 with st.spinner("Setting up Robyn, please wait..."):
     download_and_prepare_robyn()
 
-# Verify file structure
-st.write("Verifying file structure:")
-if os.path.exists("robyn_code"):
-    st.write("robyn_code contents:")
-    st.write(os.listdir("robyn_code"))
+# Debug: Inspect contents of robyn.py
+if os.path.exists("robyn_code/robyn.py"):
+    st.write("Contents of robyn.py:")
+    with open("robyn_code/robyn.py", "r") as file:
+        st.code(file.read())
 else:
-    st.error("robyn_code directory does not exist.")
+    st.error("robyn.py is missing in robyn_code!")
 
-# Import Robyn dynamically after ensuring it's downloaded
+# Attempt to dynamically import Robyn
 try:
-    from robyn_code.robyn import Robyn
-    st.write("Successfully imported 'Robyn'.")
-except ImportError:
-    st.error("Failed to import 'Robyn'. Please check the robyn_code structure.")
-    st.stop()
+    from robyn_code.robyn import robyn as Robyn  # Adjust import if class name is different
+    st.write("Successfully imported 'robyn' as 'Robyn'.")
+except ImportError as e:
+    try:
+        from robyn_code.robyn import Robyn  # Attempt with original class name
+        st.write("Successfully imported 'Robyn'.")
+    except ImportError:
+        st.error(f"Failed to import 'Robyn': {str(e)}")
+        st.stop()
 
 # Streamlit app starts here
 st.title("Robyn SaaS - Marketing Mix Modeling")
@@ -114,8 +91,6 @@ if uploaded_file:
         robyn_instance.run()
 
         st.success("Robyn Model executed successfully!")
-        st.image(robyn_instance.get_plot_data(), caption="ROAS Plot")
-        st.image(robyn_instance.get_media_mix_plot(), caption="Media Mix")
 
     # Sidebar optimization settings
     st.sidebar.subheader("Optimization Settings")
