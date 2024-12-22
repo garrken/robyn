@@ -23,24 +23,11 @@ python_folder = os.path.join(robyn_code_path, "python")
 if not os.path.exists(python_folder):
     os.makedirs(python_folder)
 
-# Kontrollera om requirements.txt finns, annars ladda ner det
+# Kontrollera om requirements.txt finns
 requirements_file = os.path.join(python_folder, "requirements.txt")
 if not os.path.exists(requirements_file):
-    st.info("Downloading requirements.txt...")
-    try:
-        subprocess.run(
-            [
-                "curl",
-                "-o",
-                requirements_file,
-                "https://raw.githubusercontent.com/facebookexperimental/Robyn/main/python/requirements.txt",
-            ],
-            check=True,
-        )
-        st.success("requirements.txt downloaded successfully.")
-    except subprocess.CalledProcessError as e:
-        st.error(f"Failed to download requirements.txt: {e}")
-        st.stop()
+    st.error("requirements.txt not found in robyn_code/python folder.")
+    st.stop()
 
 # Lägg till robyn_code/python till sys.path
 if python_folder not in sys.path:
