@@ -18,6 +18,12 @@ if not os.path.exists(robyn_code_path):
         st.error(f"Failed to clone Robyn repository: {e}")
         st.stop()
 
+# Kontrollera om requirements.txt finns
+requirements_file = os.path.join(robyn_code_path, "python", "requirements.txt")
+if not os.path.exists(requirements_file):
+    st.error("requirements.txt not found in robyn_code/python folder.")
+    st.stop()
+
 # Lägg till robyn_code/python till sys.path
 python_path = os.path.join(robyn_code_path, "python")
 if python_path not in sys.path:
@@ -26,7 +32,6 @@ if python_path not in sys.path:
 # Installera beroenden
 try:
     st.info("Installing dependencies...")
-    requirements_file = os.path.join(python_path, "requirements.txt")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_file])
     st.success("Dependencies installed successfully.")
 except subprocess.CalledProcessError as e:
@@ -45,14 +50,4 @@ st.title("Robyn SaaS - Marketing Mix Modeling")
 
 # Exempel på användning av Robyn
 if 'robyn_instance' not in st.session_state:
-    working_dir = "./robyn_working_dir"
-    os.makedirs(working_dir, exist_ok=True)
-    try:
-        st.session_state.robyn_instance = Robyn(working_dir=working_dir)
-        st.success("Robyn instance created.")
-    except Exception as e:
-        st.error(f"Failed to create Robyn instance: {e}")
-else:
-    st.info("Robyn instance is already created.")
-
-st.write("Använd Robyn för att utföra Marketing Mix Modeling.")
+    working_dir = "./robyn_work
