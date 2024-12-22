@@ -33,11 +33,16 @@ if not os.path.exists(requirements_file):
 if python_folder not in sys.path:
     sys.path.append(python_folder)
 
-# Installera beroenden
+# Installera beroenden, ignorera rpy2
 try:
     st.info("Installing dependencies...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_file])
-    st.success("Dependencies installed successfully.")
+    with open(requirements_file, "r") as req_file:
+        requirements = req_file.readlines()
+    requirements = [req.strip() for req in requirements if not req.startswith("rpy2")]
+    with open("filtered_requirements.txt", "w") as filtered_req:
+        filtered_req.write("\n".join(requirements))
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "filtered_requirements.txt"])
+    st.success("Dependencies installed successfully (excluding rpy2).")
 except subprocess.CalledProcessError as e:
     st.error(f"Dependency installation failed: {e}")
     st.stop()
