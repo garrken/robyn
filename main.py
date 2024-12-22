@@ -4,22 +4,31 @@ import zipfile
 import streamlit as st
 import pandas as pd
 
-# Function to download and extract only the Python part of Robyn
+# Function to download and extract only the Python part of Robyn with progress bar
 def download_and_prepare_robyn():
     if not os.path.exists("robyn_code"):
         st.info("Downloading Robyn Python code...")
         url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
-        
+
+        # Streamlit progress bar
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+
         # Download the repository as a zip file
         response = requests.get(url, stream=True)
         total_size = int(response.headers.get('content-length', 0))
         zip_path = "robyn.zip"
-        
-        # Save the downloaded content
+        downloaded_size = 0
+
+        # Save the downloaded content in chunks
         with open(zip_path, "wb") as f:
             for chunk in response.iter_content(1024):
-                f.write(chunk)
-        
+                if chunk:
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
+                    progress_bar.progress(min(downloaded_size / total_size, 1.0))
+                    status_text.text(f"Downloaded {downloaded_size} of {total_size} bytes...")
+
         # Extract only the Python part of the repository
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             for file in zip_ref.namelist():
@@ -28,10 +37,14 @@ def download_and_prepare_robyn():
         
         # Rename the extracted folder for simplicity
         os.rename("Robyn-main/python", "robyn_code")
-        
+
         # Cleanup
         os.remove(zip_path)
         os.rmdir("Robyn-main")
+
+        # Update status
+        status_text.text("Download complete!")
+        progress_bar.empty()
 
 # Download Robyn Python code if not already available
 with st.spinner("Setting up Robyn, please wait..."):
