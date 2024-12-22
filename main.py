@@ -20,12 +20,14 @@ if not os.path.exists(robyn_code_path):
 
 # Lägg till robyn_code/python till sys.path
 python_path = os.path.join(robyn_code_path, "python")
-sys.path.append(python_path)
+if python_path not in sys.path:
+    sys.path.append(python_path)
 
-# Installera PyQt5 som fallback om PyQt6 misslyckas
+# Installera beroenden
 try:
     st.info("Installing dependencies...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    requirements_file = os.path.join(python_path, "requirements.txt")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_file])
     st.success("Dependencies installed successfully.")
 except subprocess.CalledProcessError as e:
     st.error(f"Dependency installation failed: {e}")
@@ -33,7 +35,7 @@ except subprocess.CalledProcessError as e:
 
 # Importera Robyn
 try:
-    from robyn import Robyn
+    from robyn.robyn import Robyn
     st.success("Successfully imported Robyn.")
 except ImportError as e:
     st.error(f"Failed to import Robyn: {e}")
