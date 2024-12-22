@@ -1,8 +1,6 @@
 import os
 import subprocess
 import streamlit as st
-import pandas as pd
-
 
 def install_robyn():
     """Klonar och installerar Robyn från GitHub."""
@@ -24,7 +22,9 @@ def install_robyn():
     try:
         # Installera PyQt5 och andra beroenden separat
         subprocess.check_call(["pip", "install", "pyqt5"])
-        subprocess.check_call(["pip", "install", "-e", os.path.join(target_dir, "python")])
+        
+        # Installera Robyn utan editable mode
+        subprocess.check_call(["pip", "install", os.path.join(target_dir, "python")])
     except subprocess.CalledProcessError as e:
         st.error(f"Failed to install Robyn dependencies: {e}")
         return False
@@ -32,47 +32,37 @@ def install_robyn():
     st.success("Robyn installed successfully!")
     return True
 
+def main():
+    st.title("Robyn SaaS - Marketing Mix Modeling")
 
-# Kör installation av Robyn
-with st.spinner("Setting up Robyn, please wait..."):
-    if not install_robyn():
-        st.stop()
+    # Installera Robyn om det inte är tillgängligt
+    if not os.path.exists("Robyn/python") or not os.path.exists("Robyn/python/robyn"):
+        if not install_robyn():
+            st.error("Failed to set up Robyn. Please check the logs.")
+            return
 
-# Importera Robyn efter installation
-try:
-    from robyn import Robyn
-    st.success("Robyn imported successfully!")
-except ImportError as e:
-    st.error(f"Failed to import Robyn: {str(e)}")
-    st.stop()
+    # Dynamiskt importera Robyn
+    try:
+        from Robyn.python.robyn import Robyn
+        st.success("Successfully imported Robyn!")
+    except ImportError as e:
+        st.error(f"Failed to import Robyn: {e}")
+        return
 
-# Initiera applikationens huvudgränssnitt
-st.title("Robyn SaaS - Marketing Mix Modeling")
+    # Använd Robyn
+    try:
+        robyn_instance = Robyn(working_dir="robyn_logs")
+        robyn_instance.initialize(
+            mmm_data="path_to_mmm_data.csv",
+            holidays_data="path_to_holidays.csv",
+            hyperparameters="path_to_hyperparameters.csv",
+        )
+        st.write("Robyn initialized successfully!")
+    except Exception as e:
+        st.error(f"Failed to initialize Robyn: {e}")
+        return
 
-# Skapa arbetskatalog
-working_dir = "robyn_output"
-os.makedirs(working_dir, exist_ok=True)
+    st.write("Robyn is ready to use!")
 
-# Skapa en Robyn-instans
-try:
-    robyn_instance = Robyn(working_dir=working_dir)
-    st.success("Robyn initialized successfully!")
-except Exception as e:
-    st.error(f"Failed to initialize Robyn: {str(e)}")
-    st.stop()
-
-# Användargränssnitt för att köra Robyn-modellen
-uploaded_file = st.file_uploader("Upload your MMM data CSV file", type=["csv"])
-
-if uploaded_file:
-    st.subheader("Uploaded File")
-    df = pd.read_csv(uploaded_file)
-    st.dataframe(df.head())
-
-    if st.button("Run Robyn Model"):
-        try:
-            st.info("Running Robyn model...")
-            # Lägg till din Robyn-körlogik här
-            st.success("Robyn model run completed!")
-        except Exception as e:
-            st.error(f"Failed to run Robyn model: {str(e)}")
+if __name__ == "__main__":
+    main()
