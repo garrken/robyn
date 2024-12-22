@@ -18,8 +18,13 @@ if not os.path.exists(robyn_code_path):
         st.error(f"Failed to clone Robyn repository: {e}")
         st.stop()
 
+# Kontrollera om /python-mappen finns, annars skapa den
+python_folder = os.path.join(robyn_code_path, "python")
+if not os.path.exists(python_folder):
+    os.makedirs(python_folder)
+
 # Kontrollera om requirements.txt finns, annars ladda ner det
-requirements_file = os.path.join(robyn_code_path, "python", "requirements.txt")
+requirements_file = os.path.join(python_folder, "requirements.txt")
 if not os.path.exists(requirements_file):
     st.info("Downloading requirements.txt...")
     try:
@@ -38,9 +43,8 @@ if not os.path.exists(requirements_file):
         st.stop()
 
 # Lägg till robyn_code/python till sys.path
-python_path = os.path.join(robyn_code_path, "python")
-if python_path not in sys.path:
-    sys.path.append(python_path)
+if python_folder not in sys.path:
+    sys.path.append(python_folder)
 
 # Installera beroenden
 try:
