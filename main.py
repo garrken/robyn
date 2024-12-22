@@ -50,4 +50,14 @@ st.title("Robyn SaaS - Marketing Mix Modeling")
 
 # Exempel på användning av Robyn
 if 'robyn_instance' not in st.session_state:
-    working_dir = "./robyn_work
+    working_dir = "./robyn_working_dir"
+    os.makedirs(working_dir, exist_ok=True)
+    try:
+        st.session_state.robyn_instance = Robyn(working_dir=working_dir)
+        st.success("Robyn instance created.")
+    except Exception as e:
+        st.error(f"Failed to create Robyn instance: {e}")
+else:
+    st.info("Robyn instance is already created.")
+
+st.write("Använd Robyn för att utföra Marketing Mix Modeling.")
