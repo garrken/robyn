@@ -1,4 +1,3 @@
-git+https://github.com/facebookexperimental/Robyn.git@main#egg=robyn
 numpy
 pandas
 scipy
