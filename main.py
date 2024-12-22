@@ -4,7 +4,7 @@ import streamlit as st
 
 
 def install_robyn():
-    """Installera Robyn med anpassade beroenden."""
+    """Install Robyn with dependencies, excluding rpy2."""
     repo_url = "https://github.com/facebookexperimental/Robyn.git"
     target_dir = "Robyn"
 
@@ -21,11 +21,11 @@ def install_robyn():
 
     st.info("Installing Robyn dependencies...")
     try:
-        # Installera PyQt5 och andra beroenden
+        # Installera beroenden från uppdaterad requirements.txt
         subprocess.check_call(["pip", "install", "-r", os.path.join(target_dir, "python", "requirements.txt")])
 
-        # Installera Robyn-paketet
-        subprocess.check_call(["pip", "install", os.path.join(target_dir, "python")])
+        # Installera Robyn utan att använda `rpy2`
+        subprocess.check_call(["pip", "install", "--no-deps", os.path.join(target_dir, "python")])
     except subprocess.CalledProcessError as e:
         st.error(f"Failed to install Robyn dependencies: {e}")
         return False
@@ -37,7 +37,7 @@ def install_robyn():
 def main():
     st.title("Robyn SaaS - Marketing Mix Modeling")
 
-    # Installera Robyn om det inte är tillgängligt
+    # Installera Robyn om det inte redan finns
     if not os.path.exists("Robyn/python") or not os.path.exists("Robyn/python/robyn"):
         if not install_robyn():
             st.error("Failed to set up Robyn. Please check the logs.")
