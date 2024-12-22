@@ -1,55 +1,53 @@
+import streamlit as st
 import os
 import subprocess
-import streamlit as st
+from pathlib import Path
 
+# Function to check and install dependencies
 def install_dependencies():
-    """Install dependencies for robyn_code."""
-    st.info("Installing dependencies...")
+    """Install required dependencies for Robyn."""
     try:
-        subprocess.check_call(["pip", "install", "-r", "robyn_code/requirements.txt"])
-        st.success("Dependencies installed successfully!")
-    except subprocess.CalledProcessError as e:
+        requirements_path = Path("robyn_code/requirements.txt")
+        if requirements_path.exists():
+            subprocess.check_call([
+                "pip", "install", "-r", str(requirements_path)
+            ])
+        else:
+            st.error("requirements.txt not found in robyn_code folder.")
+    except Exception as e:
         st.error(f"Failed to install dependencies: {e}")
-        return False
-    return True
 
-def main():
-    st.title("Robyn SaaS - Marketing Mix Modeling")
-
-    # Install dependencies if not already installed
-    if not install_dependencies():
-        st.stop()
-
-    # Dynamically import Robyn from robyn_code
+# Function to dynamically import Robyn
+def import_robyn():
+    """Import Robyn module dynamically."""
     try:
         from robyn_code.robyn import Robyn
         st.success("Successfully imported Robyn!")
-    except ImportError as e:
+        return Robyn
+    except ModuleNotFoundError as e:
         st.error(f"Failed to import Robyn: {e}")
-        st.stop()
+        return None
 
-    # Initialize Robyn
-    try:
-        robyn_instance = Robyn(working_dir="robyn_logs")
-        st.write("Robyn initialized successfully!")
-    except Exception as e:
-        st.error(f"Failed to initialize Robyn: {e}")
-        st.stop()
+# Streamlit app starts here
+st.title("Robyn SaaS - Marketing Mix Modeling")
 
-    # Add functionality for user interaction
-    st.subheader("Run Robyn Model")
-    csv_input = st.text_input("Enter CSV input path:")
-    alpha = st.slider("Set alpha value:", min_value=0.0, max_value=1.0, value=0.5)
+# Install dependencies
+st.write("Installing dependencies...")
+install_dependencies()
 
-    if st.button("Run Model"):
-        if csv_input:
-            try:
-                result = robyn_instance.run(csv_input=csv_input, alpha=alpha)
-                st.success(f"Model run successfully: {result}")
-            except Exception as e:
-                st.error(f"Error running model: {e}")
-        else:
-            st.error("Please provide a valid CSV input path.")
+# Check if robyn_code folder exists
+robyn_code_path = Path("robyn_code")
+if robyn_code_path.exists():
+    st.write("robyn_code directory found.")
+    Robyn = import_robyn()
 
-if __name__ == "__main__":
-    main()
+    if Robyn:
+        # Initialize Robyn
+        try:
+            working_dir = "./robyn_outputs"
+            robyn_instance = Robyn(working_dir)
+            st.success("Robyn instance created successfully!")
+        except Exception as e:
+            st.error(f"Failed to initialize Robyn: {e}")
+else:
+    st.error("robyn_code directory does not exist. Please ensure the directory is present.")
