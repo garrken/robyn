@@ -2,8 +2,9 @@ import os
 import subprocess
 import streamlit as st
 
+
 def install_robyn():
-    """Klonar och installerar Robyn från GitHub."""
+    """Installera Robyn med anpassade beroenden."""
     repo_url = "https://github.com/facebookexperimental/Robyn.git"
     target_dir = "Robyn"
 
@@ -18,12 +19,12 @@ def install_robyn():
             st.error(f"Failed to clone Robyn repository: {result.stderr.decode()}")
             return False
 
-    st.info("Installing dependencies (PyQt5 instead of PyQt6)...")
+    st.info("Installing Robyn dependencies...")
     try:
-        # Installera PyQt5 och andra beroenden separat
-        subprocess.check_call(["pip", "install", "pyqt5"])
-        
-        # Installera Robyn utan editable mode
+        # Installera PyQt5 och andra beroenden
+        subprocess.check_call(["pip", "install", "-r", os.path.join(target_dir, "python", "requirements.txt")])
+
+        # Installera Robyn-paketet
         subprocess.check_call(["pip", "install", os.path.join(target_dir, "python")])
     except subprocess.CalledProcessError as e:
         st.error(f"Failed to install Robyn dependencies: {e}")
@@ -31,6 +32,7 @@ def install_robyn():
 
     st.success("Robyn installed successfully!")
     return True
+
 
 def main():
     st.title("Robyn SaaS - Marketing Mix Modeling")
@@ -63,6 +65,7 @@ def main():
         return
 
     st.write("Robyn is ready to use!")
+
 
 if __name__ == "__main__":
     main()
