@@ -2,70 +2,54 @@ import os
 import subprocess
 import streamlit as st
 
-
-def install_robyn():
-    """Install Robyn with dependencies, excluding rpy2."""
-    repo_url = "https://github.com/facebookexperimental/Robyn.git"
-    target_dir = "Robyn"
-
-    if not os.path.exists(target_dir):
-        st.info("Cloning Robyn repository...")
-        result = subprocess.run(
-            ["git", "clone", repo_url, target_dir],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        if result.returncode != 0:
-            st.error(f"Failed to clone Robyn repository: {result.stderr.decode()}")
-            return False
-
-    st.info("Installing Robyn dependencies...")
+def install_dependencies():
+    """Install dependencies for robyn_code."""
+    st.info("Installing dependencies...")
     try:
-        # Installera beroenden från uppdaterad requirements.txt
-        subprocess.check_call(["pip", "install", "-r", os.path.join(target_dir, "python", "requirements.txt")])
-
-        # Installera Robyn utan att använda `rpy2`
-        subprocess.check_call(["pip", "install", "--no-deps", os.path.join(target_dir, "python")])
+        subprocess.check_call(["pip", "install", "-r", "robyn_code/requirements.txt"])
+        st.success("Dependencies installed successfully!")
     except subprocess.CalledProcessError as e:
-        st.error(f"Failed to install Robyn dependencies: {e}")
+        st.error(f"Failed to install dependencies: {e}")
         return False
-
-    st.success("Robyn installed successfully!")
     return True
-
 
 def main():
     st.title("Robyn SaaS - Marketing Mix Modeling")
 
-    # Installera Robyn om det inte redan finns
-    if not os.path.exists("Robyn/python") or not os.path.exists("Robyn/python/robyn"):
-        if not install_robyn():
-            st.error("Failed to set up Robyn. Please check the logs.")
-            return
+    # Install dependencies if not already installed
+    if not install_dependencies():
+        st.stop()
 
-    # Dynamiskt importera Robyn
+    # Dynamically import Robyn from robyn_code
     try:
-        from Robyn.python.robyn import Robyn
+        from robyn_code.robyn import Robyn
         st.success("Successfully imported Robyn!")
     except ImportError as e:
         st.error(f"Failed to import Robyn: {e}")
-        return
+        st.stop()
 
-    # Använd Robyn
+    # Initialize Robyn
     try:
         robyn_instance = Robyn(working_dir="robyn_logs")
-        robyn_instance.initialize(
-            mmm_data="path_to_mmm_data.csv",
-            holidays_data="path_to_holidays.csv",
-            hyperparameters="path_to_hyperparameters.csv",
-        )
         st.write("Robyn initialized successfully!")
     except Exception as e:
         st.error(f"Failed to initialize Robyn: {e}")
-        return
+        st.stop()
 
-    st.write("Robyn is ready to use!")
+    # Add functionality for user interaction
+    st.subheader("Run Robyn Model")
+    csv_input = st.text_input("Enter CSV input path:")
+    alpha = st.slider("Set alpha value:", min_value=0.0, max_value=1.0, value=0.5)
 
+    if st.button("Run Model"):
+        if csv_input:
+            try:
+                result = robyn_instance.run(csv_input=csv_input, alpha=alpha)
+                st.success(f"Model run successfully: {result}")
+            except Exception as e:
+                st.error(f"Error running model: {e}")
+        else:
+            st.error("Please provide a valid CSV input path.")
 
 if __name__ == "__main__":
     main()
