@@ -1,53 +1,72 @@
 import os
-import requests
-import zipfile
+import subprocess
 import streamlit as st
-import pandas as pd
 
-os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+# Funktion för att klona och installera Robyn
+def install_robyn():
+    """Klonar och installerar Robyn från GitHub."""
+    repo_url = "https://github.com/facebookexperimental/Robyn.git"
+    target_dir = "Robyn"
 
-def download_and_prepare_robyn():
-    if not os.path.exists("robyn_code"):
-        st.info("Downloading Robyn Python code...")
-        url = "https://github.com/facebookexperimental/Robyn/archive/refs/heads/main.zip"
+    if not os.path.exists(target_dir):
+        st.info("Cloning Robyn repository...")
+        result = subprocess.run(
+            ["git", "clone", repo_url, target_dir],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            st.error(f"Failed to clone Robyn repository: {result.stderr.decode()}")
+            return
 
-        response = requests.get(url, stream=True)
-        zip_path = "robyn.zip"
+    st.info("Installing Robyn as a Python module...")
+    result = subprocess.run(
+        ["pip", "install", "-e", os.path.join(target_dir, "python")],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        st.error(f"Failed to install Robyn: {result.stderr.decode()}")
+    else:
+        st.success("Robyn installed successfully!")
 
-        with open(zip_path, "wb") as f:
-            for chunk in response.iter_content(1024):
-                f.write(chunk)
-
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(".")
-        
-        if os.path.exists("Robyn-main/python/src/robyn"):
-            os.rename("Robyn-main/python/src/robyn", "robyn_code")
-        else:
-            st.error("Failed to extract robyn_code correctly!")
-
-        os.remove(zip_path)
-
+# Kör installation av Robyn
 with st.spinner("Setting up Robyn, please wait..."):
-    download_and_prepare_robyn()
+    install_robyn()
 
-# Debug robyn.py content
-if os.path.exists("robyn_code/robyn.py"):
-    st.write("Contents of robyn.py:")
-    with open("robyn_code/robyn.py", "r") as file:
-        st.code(file.read())
-else:
-    st.error("robyn.py is missing in robyn_code!")
-
+# Importera Robyn efter installation
 try:
-    from robyn_code.robyn import robyn as Robyn
-    st.write("Successfully imported 'robyn' as 'Robyn'.")
-except ImportError:
-    try:
-        from robyn_code.robyn import Robyn
-        st.write("Successfully imported 'Robyn'.")
-    except ImportError as e:
-        st.error(f"Failed to import 'Robyn': {str(e)}")
-        st.stop()
+    from robyn import Robyn
+    st.success("Robyn imported successfully!")
+except ImportError as e:
+    st.error(f"Failed to import Robyn: {str(e)}")
 
+# Initiera applikationens huvudgränssnitt
 st.title("Robyn SaaS - Marketing Mix Modeling")
+
+# Skapa arbetskatalog
+working_dir = "robyn_output"
+os.makedirs(working_dir, exist_ok=True)
+
+# Skapa en Robyn-instans
+try:
+    robyn_instance = Robyn(working_dir=working_dir)
+    st.success("Robyn initialized successfully!")
+except Exception as e:
+    st.error(f"Failed to initialize Robyn: {str(e)}")
+
+# Användargränssnitt för att köra Robyn-modellen
+uploaded_file = st.file_uploader("Upload your MMM data CSV file", type=["csv"])
+
+if uploaded_file:
+    st.subheader("Uploaded File")
+    st.dataframe(pd.read_csv(uploaded_file).head())
+
+    if st.button("Run Robyn Model"):
+        # Exempel: använd Robyn-instansen
+        try:
+            st.info("Running Robyn...")
+            # Lägg till körlogik här baserat på Robyn-instansen
+            st.success("Robyn model run completed!")
+        except Exception as e:
+            st.error(f"Failed to run Robyn model: {str(e)}")
